@@ -38,19 +38,19 @@ pipeline {
         stage('⚖️ 3. Auditoria de Simetria (Cérebro LUA)') {
             steps {
                 script {
-                    echo "🧠 [LUA_GOVERNOR] Iniciando Auditoria de Estados Estacionários..."
+                    echo "🧠 [LUA_GOVERNO] Iniciando Auditoria de Estados Estacionários..."
                     
                     // 1. Extração do Gradiente Ricci via Python (O Fato)
                     def gradiente = sh(script: "docker exec engine_python python3 -c 'from utils.meta_expert import MetaExpert; print(MetaExpert.calcular_funcao_limite())'", returnStdout: true).trim()
                     
                     // 2. O Veredito via Algoritmo Lua (A Lei)
                     // O Lua age como no seu NVim: se a simetria falha, o retorno é 1.
-                    def luaExitCode = sh(script: "lua infra/envoy/governor.lua ${gradiente}", returnStatus: true)
+                    def luaExitCode = sh(script: "lua infra/envoy/governo.lua ${gradiente}", returnStatus: true)
 
                     if (luaExitCode == 0) {
                         echo "🔓 [SIMETRIA] 1.2 Confirmado. Engrenagem parafusada com Sucesso."
                     } else {
-                        error "❌ [RUPTURA] O Governador Lua detectou assimetria. Build Abortado."
+                        error "❌ [RUPTURA] O Governado Lua detectou assimetria. Build Abortado."
                     }
                 }
             }
@@ -62,7 +62,7 @@ pipeline {
                     echo "🔓 [SOBERANIA] Carimbando v1.2-soberano no GitHub..."
                     
                     sh "git tag -d v1.2-soberano || true"
-                    sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 (Confirmado via Lua Governor)'"
+                    sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 (Confirmado via Lua Governo)'"
                     
                     withCredentials([usernamePassword(credentialsId: "${GIT_CRED_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         // Push Seguro via HTTPS
@@ -80,7 +80,7 @@ pipeline {
             sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
         }
         failure {
-            echo "🚩 [ALERTA] Build falhou. Verifique a simetria no governor.lua."
+            echo "🚩 [ALERTA] Build falhou. Verifique a simetria no governo.lua."
         }
     }
 }
