@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         GIT_CRED_ID = 'github-token-zeta'
-        REPO_URL = 'https://github.com'
+        REPO_URL = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
     }
 
     stages {
