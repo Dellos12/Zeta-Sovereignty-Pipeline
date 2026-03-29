@@ -2,10 +2,10 @@ pipeline {
     agent any
     
     environment {
-        // ID da credencial que você criou no Jenkins (Kind: Username with password)
+        // Credencial 'github-token-zeta' deve ser do tipo 'Username with password'
         GIT_CRED_ID = 'github-token-zeta'
-        // URL real do seu repositório no GitHub
-        REPO_URL = 'git@github.com:Dellos12/Zeta-Sovereignty-Pipeline.git'
+        // URL Real para o salto de retorno ao GitHub
+        REPO_URL = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
     }
 
     stages {
@@ -18,16 +18,16 @@ pipeline {
 
         stage('🔥 Ignição do Reator') {
             steps {
-                // Sobe as 7 portas do Manifold Zeta
-                sh 'docker compose up -d --build'
-                echo "Aguardando estabilização da Curvatura de Ricci..."
-                sleep 20 // Tempo para o SentenceTransformers hibridizar
+                // Usamos docker-compose (com hífen) conforme mapeado no volume
+                sh 'docker-compose up -d --build'
+                echo "Aguardando estabilização da Curvatura de Ricci (1.2006)..."
+                sleep 25 // Tempo extra para o download dos modelos de IA
             }
         }
 
         stage('⚖️ Auditoria ABNT-ZETA-1200') {
             steps {
-                // Chama o braço armado para validar o 1.2006
+                // Validação do 1.2 via script de auditoria
                 sh 'chmod +x infra/envoy/audit_zeta.sh'
                 sh './infra/envoy/audit_zeta.sh'
             }
@@ -38,14 +38,14 @@ pipeline {
                 script {
                     echo "🔓 [SOBERANIA] 1.2 Confirmado. Carimbando Versão Gold no GitHub."
                     
-                    // Cria a TAG localmente (remove se já existir para evitar conflito)
+                    // Limpeza e criação da Tag de Soberania
                     sh "git tag -d v1.2-soberano || true"
                     sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 Confirmado via Geometria de Ricci'"
                     
-                    // Empurra a Tag para o GitHub usando as credenciais injetadas
+                    // Push seguro usando o Token injetado
                     withCredentials([usernamePassword(credentialsId: "${GIT_CRED_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        // Construção da URL com Token para o Push Seguro
-                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@://github.com --tags --force"
+                        // Construção da URL de push via HTTPS com o Token
+                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Dellos12/Zeta-Sovereignty-Pipeline --tags --force"
                     }
                 }
             }
@@ -54,9 +54,9 @@ pipeline {
 
     post {
         always {
-            // Retorna o Hiperplano ao repouso para o próximo build
-            sh 'docker compose down'
-            echo "🏁 Auditoria Finalizada. Manifold em estado de vácuo."
+            // Limpeza do Hiperplano para evitar vazamento de memória/containers
+            sh 'docker-compose down'
+            echo "🏁 Auditoria Finalizada. Manifold em estado de repouso."
         }
     }
 }
