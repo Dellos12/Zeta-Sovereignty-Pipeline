@@ -22,7 +22,7 @@ services:
     networks:
       - ressonancia_net
 
-  # 3. MEMÓRIA DE CURTO PRAZO (O Vácuo entre Ruby e Python)
+  # 3. MEMÓRIA DE CURTO PRAZO (Redis)
   redis:
     image: redis:alpine
     container_name: redis
@@ -52,7 +52,7 @@ services:
     networks:
       - ressonancia_net
 
-  # 5. O TRANSPORTADOR (Interface com o Mundo Real e Servidor gRPC/Web)
+  # 5. O TRANSPORTADOR (Interface Mundo Real / gRPC / Web)
   transport_go:
     build: 
       context: ./transport_go
@@ -68,7 +68,7 @@ services:
     networks:
       - ressonancia_net
 
-  # 6. O COLISOR DE PARTÍCULAS (Envoy Proxy - gRPC Web)
+  # 6. O COLISOR DE PARTÍCULAS (Envoy Proxy)
   envoy:
     image: envoyproxy/envoy:v1.28-latest
     container_name: envoy
@@ -79,7 +79,7 @@ services:
     networks:
       - ressonancia_net
 
-  # 7. O AUDITOR SUPREMO (Jenkins - CI/CD de Soberania)
+  # 7. O AUDITOR SUPREMO (Jenkins com Injeção de LUA)
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -88,12 +88,16 @@ services:
     ports:
       - "8081:8080" 
       - "50000:50000"
+    # SEQUÊNCIA DE IGNIÇÃO: Instala Lua, cria link simbólico e inicia o Jenkins
+    command: >
+      sh -c "apt-get update && apt-get install -y lua5.3 && 
+             ln -sf /usr/bin/lua5.3 /usr/bin/lua && 
+             /usr/bin/tini -- /usr/local/bin/jenkins.sh"
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
       - ./jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      # INJEÇÃO DE BINÁRIOS (Músculo do Docker dentro do Jenkins)
       - /usr/bin/docker:/usr/bin/docker
       - /usr/libexec/docker/cli-plugins/docker-compose:/usr/bin/docker-compose
     depends_on:

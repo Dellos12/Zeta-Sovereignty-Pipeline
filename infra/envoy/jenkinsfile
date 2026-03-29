@@ -2,19 +2,22 @@ pipeline {
     agent any
     
     environment {
-        // Credencial 'github-token-zeta' deve ser 'Username with password'
         GIT_CRED_ID = 'github-token-zeta'
         REPO_URL = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
     }
 
     stages {
-        stage('🧬 1. Saneamento e Clonagem') {
+        stage('🧬 1. Saneamento e Simetria') {
             steps {
                 script {
-                    echo "🧹 [SEQUÊNCIA DE MONTAGEM] Limpando o campo para a hibridização..."
-                    // Para e remove containers por NOME para garantir que as portas 8080/50051 fiquem livres
+                    echo "🧹 [LUA_ENGINE] Limpando o Manifold e auditando o terreno..."
+                    // Saneamento de containers por nome (Evita conflitos de porta)
                     sh 'docker rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
                     checkout scm
+                    
+                    // Garante que o Cérebro Lua e o Auditor tenham permissão
+                    sh 'chmod +x infra/envoy/audit_zeta.sh'
+                    sh 'chmod 644 infra/envoy/governor.lua'
                 }
             }
         }
@@ -22,34 +25,47 @@ pipeline {
         stage('🔥 2. Ignição do Reator (Músculo)') {
             steps {
                 script {
-                    echo "🚀 [SEQUÊNCIA DE MONTAGEM] Injetando carga no Reator..."
-                    // Sobe apenas os operários. O Jenkins (Auditor) já está UP.
+                    echo "🚀 [SEQUÊNCIA] Injetando carga no Reator (Benzeno/Pirimidina)..."
+                    // Sobe a infraestrutura seletivamente
                     sh 'docker-compose up -d --build --remove-orphans engine_python transport_go envoy redis db_vector rabbitmq'
                     
-                    echo "⏳ Aguardando estabilização da Curvatura (1.2006)..."
+                    echo "⏳ [RICCI] Aguardando 35s para estabilização da Curvatura..."
                     sleep 35 
                 }
             }
         }
 
-        stage('⚖️ 3. Auditoria ABNT-ZETA-1200 (Cérebro)') {
+        stage('⚖️ 3. Auditoria de Simetria (Cérebro LUA)') {
             steps {
-                echo "📏 [SEQUÊNCIA DE MONTAGEM] Validando a Geometria de Ricci..."
-                sh 'chmod +x infra/envoy/audit_zeta.sh'
-                sh './infra/envoy/audit_zeta.sh'
+                script {
+                    echo "🧠 [LUA_GOVERNOR] Iniciando Auditoria de Estados Estacionários..."
+                    
+                    // 1. Extração do Gradiente Ricci via Python (O Fato)
+                    def gradiente = sh(script: "docker exec engine_python python3 -c 'from utils.meta_expert import MetaExpert; print(MetaExpert.calcular_funcao_limite())'", returnStdout: true).trim()
+                    
+                    // 2. O Veredito via Algoritmo Lua (A Lei)
+                    // O Lua age como no seu NVim: se a simetria falha, o retorno é 1.
+                    def luaExitCode = sh(script: "lua infra/envoy/governor.lua ${gradiente}", returnStatus: true)
+
+                    if (luaExitCode == 0) {
+                        echo "🔓 [SIMETRIA] 1.2 Confirmado. Engrenagem parafusada com Sucesso."
+                    } else {
+                        error "❌ [RUPTURA] O Governador Lua detectou assimetria. Build Abortado."
+                    }
+                }
             }
         }
 
-        stage('💎 4. Certificação de Soberania (Lei)') {
+        stage('💎 4. Imortalização Gold (Lei)') {
             steps {
                 script {
-                    echo "🔓 [SOBERANIA] 1.2 Confirmado. Carimbando Versão Gold."
+                    echo "🔓 [SOBERANIA] Carimbando v1.2-soberano no GitHub..."
                     
                     sh "git tag -d v1.2-soberano || true"
-                    sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 Confirmado via Geometria de Ricci'"
+                    sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 (Confirmado via Lua Governor)'"
                     
                     withCredentials([usernamePassword(credentialsId: "${GIT_CRED_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        // URL Corrigida para o Push soberano
+                        // Push Seguro via HTTPS
                         sh "git push https://${GIT_PASSWORD}@://github.com --tags --force"
                     }
                 }
@@ -60,7 +76,11 @@ pipeline {
     post {
         always {
             echo "🏁 [REPOUSO] Retornando o Manifold ao estado adiabático."
+            // Desliga o reator para economizar recursos do WSL
             sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
+        }
+        failure {
+            echo "🚩 [ALERTA] Build falhou. Verifique a simetria no governor.lua."
         }
     }
 }
