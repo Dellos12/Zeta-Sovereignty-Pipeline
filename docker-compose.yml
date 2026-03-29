@@ -1,6 +1,6 @@
 
 services:
-  # 1. O HIPERPLANO (Banco Vetorial - pgvector)
+  # 1. Banco Vetorial (pgvector)
   db_vector:
     image: ankane/pgvector
     container_name: db_vector
@@ -13,7 +13,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 2. O PULSO (Mensageria RabbitMQ)
+  # 2. RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -24,7 +24,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 3. MEMÓRIA DE CURTO PRAZO (Redis)
+  # 3. Redis
   redis:
     image: redis:alpine
     container_name: redis
@@ -34,7 +34,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 4. O COLISOR (Motor de Geometria da Informação)
+  # 4. Engine Python
   engine_python:
     build: 
       context: ./engine_python
@@ -53,3 +53,62 @@ services:
       - db_vector
       - redis
     networks:
+      - ressonancia_net
+    profiles: ["pipeline"]
+
+  # 5. Transport Go
+  transport_go:
+    build: 
+      context: ./transport_go
+      dockerfile: Dockerfile
+    container_name: transport_go
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    volumes:
+      - ./shared_data:/app/shared_data
+    depends_on:
+      - redis
+    networks:
+      - ressonancia_net
+    profiles: ["pipeline"]
+
+  # 6. Envoy Proxy
+  envoy:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: envoy
+    volumes:
+      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "10000:10000"
+    networks:
+      - ressonancia_net
+    profiles: ["pipeline"]
+
+  # 7. Jenkins com Lua
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080" 
+      - "50000:50000"
+    command: >
+      sh -c "apt-get update && apt-get install -y lua5.3 && 
+             ln -sf /usr/bin/lua5.3 /usr/bin/lua && 
+             /usr/bin/tini -- /usr/local/bin/jenkins.sh"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - /home/devildev/ESTRUTURA_RESSONANCIA:/workspace
+    networks:
+      - ressonancia_net
+    profiles: ["jenkins"]
+
+networks:
+  ressonancia_net:
+    driver: bridge

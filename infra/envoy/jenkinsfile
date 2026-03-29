@@ -29,7 +29,7 @@ pipeline {
         stage('🔥 Subir Banco Vetorial') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d db_vector'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d db_vector'
                 }
             }
         }
@@ -37,7 +37,7 @@ pipeline {
         stage('🔥 Subir Redis') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d redis'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d redis'
                 }
             }
         }
@@ -45,7 +45,7 @@ pipeline {
         stage('🔥 Subir RabbitMQ') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d rabbitmq'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d rabbitmq'
                 }
             }
         }
@@ -53,7 +53,7 @@ pipeline {
         stage('🔥 Subir Engine Python') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d engine_python'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d engine_python'
                 }
             }
         }
@@ -61,7 +61,7 @@ pipeline {
         stage('🔥 Subir Transport Go') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d transport_go'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d transport_go'
                 }
             }
         }
@@ -69,7 +69,7 @@ pipeline {
         stage('🔥 Subir Envoy') {
             steps {
                 script {
-                    sh 'cd /workspace && docker-compose --profile pipeline up -d envoy'
+                    sh 'cd /workspace && docker compose --profile pipeline up -d envoy'
                 }
             }
         }
@@ -97,7 +97,8 @@ pipeline {
 
     post {
         always {
-            sh 'cd /workspace && docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
+            sh 'cd /workspace && docker compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
         }
     }
 }
+
