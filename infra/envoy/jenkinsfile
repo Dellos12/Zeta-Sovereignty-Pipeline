@@ -17,7 +17,7 @@ pipeline {
                     
                     // Garante que o Cérebro Lua e o Auditor tenham permissão
                     sh 'chmod +x infra/envoy/audit_zeta.sh'
-                    sh 'chmod 644 infra/envoy/governor.lua'
+                    sh 'chmod 644 infra/envoy/governo.lua'
                 }
             }
         }
