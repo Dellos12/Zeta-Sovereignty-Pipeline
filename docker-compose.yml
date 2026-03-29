@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 2. O PULSO (Mensageria RabbitMQ)
   rabbitmq:
@@ -21,6 +22,7 @@ services:
       - "15672:15672"
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 3. MEMÓRIA DE CURTO PRAZO (Redis)
   redis:
@@ -30,6 +32,7 @@ services:
       - "6379:6379"
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 4. O COLISOR (Motor de Geometria da Informação)
   engine_python:
@@ -51,6 +54,7 @@ services:
       - redis
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 5. O TRANSPORTADOR (Interface Mundo Real / gRPC / Web)
   transport_go:
@@ -67,6 +71,7 @@ services:
       - redis
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 6. O COLISOR DE PARTÍCULAS (Envoy Proxy)
   envoy:
@@ -78,6 +83,7 @@ services:
       - "10000:10000"
     networks:
       - ressonancia_net
+    profiles: ["pipeline"]
 
   # 7. O AUDITOR SUPREMO (Jenkins com Injeção de LUA)
   jenkins:
@@ -88,7 +94,6 @@ services:
     ports:
       - "8081:8080" 
       - "50000:50000"
-    # SEQUÊNCIA DE IGNIÇÃO: Instala Lua, cria link simbólico e inicia o Jenkins
     command: >
       sh -c "apt-get update && apt-get install -y lua5.3 && 
              ln -sf /usr/bin/lua5.3 /usr/bin/lua && 
@@ -100,11 +105,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
       - /usr/libexec/docker/cli-plugins/docker-compose:/usr/bin/docker-compose
-    depends_on:
-      - transport_go
-      - engine_python
     networks:
       - ressonancia_net
+    profiles: ["jenkins"]
 
 networks:
   ressonancia_net:

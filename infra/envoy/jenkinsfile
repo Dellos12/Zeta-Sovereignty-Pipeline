@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
     environment {
@@ -6,51 +7,88 @@ pipeline {
     }
 
     stages {
-        stage('🧬 1. Saneamento e Simetria') {
+        stage('🧬 Preparação') {
             steps {
                 script {
-                    echo "🧹 [LUA_ENGINE] Limpando pastas fantasmas e auditando caminhos..."
+                    echo "🧹 Limpando containers antigos..."
                     sh 'docker rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
                     
                     checkout scm
 
-                    // LÓGICA DE GOVERNANÇA: Se o Docker criou uma pasta no lugar do arquivo, o shell remove.
                     sh """
                     [ -d "infra/envoy/envoy.yaml" ] && sudo rm -rf infra/envoy/envoy.yaml || true
                     [ -d "infra/envoy/governo.lua" ] && sudo rm -rf infra/envoy/governo.lua || true
                     """
-                    
+
                     sh 'chmod +x infra/envoy/audit_zeta.sh'
                     sh 'chmod 644 infra/envoy/governo.lua'
                 }
             }
         }
 
-        stage('🔥 2. Ignição do Reator') {
+        stage('🔥 Subir Banco Vetorial') {
             steps {
                 script {
-                    echo "🚀 [SEQUÊNCIA] Iniciando Reator com Montagem Segura..."
-                    sh 'docker-compose up -d --build --remove-orphans'
-                    echo "⏳ Aguardando estabilização (35s)..."
-                    sleep 35
+                    sh 'docker compose --profile pipeline up -d db_vector'
                 }
             }
         }
 
-        stage('⚖️ 3. Veredito via Governo Lua') {
+        stage('🔥 Subir Redis') {
             steps {
                 script {
-                    // Captura o gradiente do Reator
-                    def gradiente = sh(script: "docker exec engine_python python3 -c 'from utils.meta_expert import MetaExpert; print(MetaExpert.calcular_funcao_limite())'", returnStdout: true).trim()
-                    
+                    sh 'docker compose --profile pipeline up -d redis'
+                }
+            }
+        }
+
+        stage('🔥 Subir RabbitMQ') {
+            steps {
+                script {
+                    sh 'docker compose --profile pipeline up -d rabbitmq'
+                }
+            }
+        }
+
+        stage('🔥 Subir Engine Python') {
+            steps {
+                script {
+                    sh 'docker compose --profile pipeline up -d engine_python'
+                }
+            }
+        }
+
+        stage('🔥 Subir Transport Go') {
+            steps {
+                script {
+                    sh 'docker compose --profile pipeline up -d transport_go'
+                }
+            }
+        }
+
+        stage('🔥 Subir Envoy') {
+            steps {
+                script {
+                    sh 'docker compose --profile pipeline up -d envoy'
+                }
+            }
+        }
+
+        stage('⚖️ Veredito via Governo Lua') {
+            steps {
+                script {
+                    def gradiente = sh(
+                        script: "docker exec engine_python python3 -c 'from utils.meta_expert import MetaExpert; print(MetaExpert.calcular_funcao_limite())'",
+                        returnStdout: true
+                    ).trim()
+
                     echo "🧠 Consultando governo.lua sobre o Gradiente: ${gradiente}"
-                    // O Jenkins executa o governo.lua com o nome correto
                     def luaExitCode = sh(script: "lua infra/envoy/governo.lua ${gradiente}", returnStatus: true)
 
                     if (luaExitCode == 0) {
-                        echo "🔓 [BRAÇO] Governo Lua autorizou a Certificação."
+                        echo "✅ Governo Lua autorizou a Certificação."
                     } else {
-                        error "❌ [BRAÇO] O Governo detectou Ruptura. Build Abortado."
+                        error "❌ Ruptura detectada. Build Abortado."
                     }
                 }
             }
@@ -59,8 +97,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
+            sh 'docker compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
         }
     }
 }
-

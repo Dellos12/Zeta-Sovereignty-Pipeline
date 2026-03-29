@@ -1,7 +1,3 @@
-
--- infra/envoy/governo.lua
--- RESOLVEDOR DE SOBERANIA ZETA (Cérebro)
-
 local M = {}
 local TARGETS = { benzeno = 1.2006931305, pirimidina = 1.8005041305, tolerance = 0.001 }
 
@@ -27,3 +23,4 @@ local valor_input = arg[1] and tonumber(arg[1]) or 0
 local status, msg = M.resolver(valor_input)
 print(msg)
 os.exit(status)
+
