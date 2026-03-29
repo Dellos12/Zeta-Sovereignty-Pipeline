@@ -2,32 +2,40 @@ pipeline {
     agent any
     
     environment {
-        // Credencial 'github-token-zeta' deve ser do tipo 'Username with password'
+        // Credencial 'github-token-zeta' deve ser 'Username with password'
         GIT_CRED_ID = 'github-token-zeta'
-        // URL Real para o salto de retorno ao GitHub
         REPO_URL = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
     }
 
     stages {
         stage('🧬 Clonagem e Sincronia') {
             steps {
-                // O Jenkins usa o Token para garantir o acesso ao Manifold
+                // Sincroniza o DNA do projeto
                 checkout scm
             }
         }
 
         stage('🔥 Ignição do Reator') {
             steps {
-                // Usamos docker-compose (com hífen) conforme mapeado no volume
-                sh 'docker-compose up -d --build'
-                echo "Aguardando estabilização da Curvatura de Ricci (1.2006)..."
-                sleep 25 // Tempo extra para o download dos modelos de IA
+                script {
+                    echo "🧹 Limpando resíduos de builds anteriores (Preservando Auditor Supremo)..."
+                    // Para e remove apenas os operários, mantendo o Jenkins (Auditor) vivo
+                    sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
+                    sh 'docker-compose rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
+                    
+                    echo "🚀 Iniciando Ciclo de Isótopos..."
+                    // Sobe apenas os serviços do reator
+                    sh 'docker-compose up -d --build engine_python transport_go envoy redis db_vector rabbitmq'
+                    
+                    echo "Aguardando estabilização da Curvatura de Ricci (1.2006)..."
+                    sleep 30 
+                }
             }
         }
 
         stage('⚖️ Auditoria ABNT-ZETA-1200') {
             steps {
-                // Validação do 1.2 via script de auditoria
+                // Chama o braço armado para validar a hibridização
                 sh 'chmod +x infra/envoy/audit_zeta.sh'
                 sh './infra/envoy/audit_zeta.sh'
             }
@@ -38,14 +46,12 @@ pipeline {
                 script {
                     echo "🔓 [SOBERANIA] 1.2 Confirmado. Carimbando Versão Gold no GitHub."
                     
-                    // Limpeza e criação da Tag de Soberania
                     sh "git tag -d v1.2-soberano || true"
                     sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 Confirmado via Geometria de Ricci'"
                     
-                    // Push seguro usando o Token injetado
                     withCredentials([usernamePassword(credentialsId: "${GIT_CRED_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        // Construção da URL de push via HTTPS com o Token
-                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Dellos12/Zeta-Sovereignty-Pipeline --tags --force"
+                        // Push seguro via HTTPS usando o Token
+                        sh "git push https://${GIT_PASSWORD}@://github.com --tags --force"
                     }
                 }
             }
@@ -54,10 +60,11 @@ pipeline {
 
     post {
         always {
-            // Limpeza do Hiperplano para evitar vazamento de memória/containers
-            sh 'docker-compose down'
-            echo "🏁 Auditoria Finalizada. Manifold em estado de repouso."
+            // Coloca o reator em repouso, mas mantém o Jenkins em guarda (UP)
+            sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
+            echo "🏁 Auditoria Finalizada. Reator desligado, Auditor Supremo online."
         }
     }
 }
+
 
