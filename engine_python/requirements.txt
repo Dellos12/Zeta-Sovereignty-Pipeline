@@ -1,0 +1,17 @@
+regex
+sentence-transformers
+torch --index-url https://download.pytorch.org
+transformers
+python-louvain
+POT
+networkit
+GraphRicciCurvature
+networkx
+scipy
+numpy==1.26.4
+polars[rtcompat]
+mxnet>=1.9.1
+grpcio
+grpcio-tools
+protobuf
+

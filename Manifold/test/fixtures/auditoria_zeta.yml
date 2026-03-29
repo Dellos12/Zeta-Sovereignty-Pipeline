@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  equacao_estado: MyString
+  conjuncao_logica: MyString
+  similaridade_fase: 1.5
+  gradiente_ricci_observado: 1.5
+  status_compliance: MyString
+  diagnostico: MyString
+  soberania_veredito: MyString
+
+two:
+  equacao_estado: MyString
+  conjuncao_logica: MyString
+  similaridade_fase: 1.5
+  gradiente_ricci_observado: 1.5
+  status_compliance: MyString
+  diagnostico: MyString
+  soberania_veredito: MyString

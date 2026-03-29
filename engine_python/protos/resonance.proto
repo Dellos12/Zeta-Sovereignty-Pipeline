@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package resonance;
+
+// Define onde o Go vai salvar os arquivos gerados
+option go_package = "manifold/transport/resonance";
+
+service AuditoriaZeta {
+  // O Rails ou o Python consultam o estado da dobra
+  rpc ConsultarSalto (RequisicaoSalto) returns (RespostaZeta) {}
+}
+
+message RequisicaoSalto {
+  string token_orto = 1;  // O "Isso" (Posição 1 do Anel)
+  string token_para = 2;  // O "Aquilo" (Posição 4 do Anel)
+  float eletronegatividade = 3; 
+}
+
+message RespostaZeta {
+  float probabilidade_zeta = 1; // Proximidade do 0
+  float curvatura_ricci = 2;    // Tensão do espaço
+  float resultado_final = 3;    // O "0" (Zeta Zero)
+  string elemento_logico = 4;   // "Carbono Zeta"
+  
+  // Geometria Temporal e Spin
+  float spin_fase = 5;          // Orientação do elétron lógico
+  repeated float sh6_coeffs = 6; // Harmônicos de 6ª ordem (Anel)
+  float densidade_tempo = 7;    // Convergência temporal
+}
+

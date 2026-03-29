@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+.env
+
+# Ruby/Rails
+/log/*
+/tmp/*
+.bundle/
+/public/assets
+/db/*.sqlite3
+/db/*.sqlite3-journal
+config/master.key
+
+# Docker & Manifold
+jenkins_home/
+shared_data/*.parquet
+!shared_data/silver/.keep
+
+# Dados de Infraestrutura (Não versionar)
+infra/postgres/
+infra/rabbitmq/
+infra/redis/
+jenkins_home/
+shared_data/

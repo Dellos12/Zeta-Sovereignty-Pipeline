@@ -1,0 +1,25 @@
+
+pipeline {
+    agent any
+    stages {
+        stage('🚀 Ignição') {
+            steps {
+                sh 'docker compose up -d --build'
+                sleep 10 // Tempo para o SentenceTransformers carregar
+            }
+        }
+        stage('⚖️ Auditoria Zeta') {
+            steps {
+                // Executa o script de auditoria que criamos
+                sh 'chmod +x infra/envoy/audit_zeta.sh'
+                sh './infra/envoy/audit_zeta.sh'
+            }
+        }
+        stage('💎 Promoção Gold') {
+            when { expression { return true } }
+            steps {
+                echo "🔓 [SOBERANIA] Sistema aprovado para o Mercado Real."
+            }
+        }
+    }
+}

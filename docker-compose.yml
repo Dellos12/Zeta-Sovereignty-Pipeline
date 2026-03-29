@@ -1,0 +1,104 @@
+services:
+  # 1. O HIPERPLANO (Banco Vetorial - pgvector)
+  db_vector:
+    image: ankane/pgvector
+    container_name: db_vector
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: manifold_development
+    ports:
+      - "5432:5432"
+    networks:
+      - ressonancia_net
+
+  # 2. O PULSO (Mensageria RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ressonancia_net
+
+  # 3. MEMÓRIA DE CURTO PRAZO (O Vácuo entre Ruby e Python)
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ressonancia_net
+
+  # 4. O COLISOR (Motor de Geometria da Informação)
+  engine_python:
+    build: 
+      context: ./engine_python
+      dockerfile: Dockerfile
+    container_name: engine_python
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+    volumes:
+      - ./engine_python:/app
+      - ./shared_data:/app/shared_data
+    stdin_open: true
+    tty: true
+    depends_on:
+      - db_vector
+      - redis
+    networks:
+      - ressonancia_net
+
+  # 5. O TRANSPORTADOR (Interface com o Mundo Real e Servidor gRPC/Web)
+  transport_go:
+    build: 
+      context: ./transport_go
+      dockerfile: Dockerfile
+    container_name: transport_go
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    volumes:
+      - ./shared_data:/app/shared_data
+    depends_on:
+      - redis
+    networks:
+      - ressonancia_net
+
+  # 6. O COLISOR DE PARTÍCULAS (Envoy Proxy - gRPC Web)
+  envoy:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: envoy
+    volumes:
+      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "10000:10000"
+    networks:
+      - ressonancia_net
+
+  # 7. O AUDITOR SUPREMO (Jenkins - CI/CD de Soberania)
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8081:8080" # Acesso via http://localhost:8081
+      - "50000:50000"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # Válvula de controle do Docker
+    depends_on:
+      - transport_go
+      - engine_python
+    networks:
+      - ressonancia_net
+
+networks:
+  ressonancia_net:
+    driver: bridge
+

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  nome: MyString
+  simbolo: MyString
+  numero_atomico: 1
+  coeficiente_zeta_alvo: 1.5
+  estabilidade: MyString
+  ressonancia_huckel: false
+
+two:
+  nome: MyString
+  simbolo: MyString
+  numero_atomico: 1
+  coeficiente_zeta_alvo: 1.5
+  estabilidade: MyString
+  ressonancia_huckel: false
