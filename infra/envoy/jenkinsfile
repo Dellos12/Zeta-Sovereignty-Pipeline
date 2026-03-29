@@ -8,49 +8,48 @@ pipeline {
     }
 
     stages {
-        stage('🧬 Clonagem e Sincronia') {
-            steps {
-                // Sincroniza o DNA do projeto
-                checkout scm
-            }
-        }
-
-        stage('🔥 Ignição do Reator') {
+        stage('🧬 1. Saneamento e Clonagem') {
             steps {
                 script {
-                    echo "🧹 Limpando resíduos de builds anteriores (Preservando Auditor Supremo)..."
-                    // Para e remove apenas os operários, mantendo o Jenkins (Auditor) vivo
-                    sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
-                    sh 'docker-compose rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
-                    
-                    echo "🚀 Iniciando Ciclo de Isótopos..."
-                    // Sobe apenas os serviços do reator
-                    sh 'docker-compose up -d --build engine_python transport_go envoy redis db_vector rabbitmq'
-                    
-                    echo "Aguardando estabilização da Curvatura de Ricci (1.2006)..."
-                    sleep 30 
+                    echo "🧹 [SEQUÊNCIA DE MONTAGEM] Limpando o campo para a hibridização..."
+                    // Para e remove containers por NOME para garantir que as portas 8080/50051 fiquem livres
+                    sh 'docker rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
+                    checkout scm
                 }
             }
         }
 
-        stage('⚖️ Auditoria ABNT-ZETA-1200') {
+        stage('🔥 2. Ignição do Reator (Músculo)') {
             steps {
-                // Chama o braço armado para validar a hibridização
+                script {
+                    echo "🚀 [SEQUÊNCIA DE MONTAGEM] Injetando carga no Reator..."
+                    // Sobe apenas os operários. O Jenkins (Auditor) já está UP.
+                    sh 'docker-compose up -d --build --remove-orphans engine_python transport_go envoy redis db_vector rabbitmq'
+                    
+                    echo "⏳ Aguardando estabilização da Curvatura (1.2006)..."
+                    sleep 35 
+                }
+            }
+        }
+
+        stage('⚖️ 3. Auditoria ABNT-ZETA-1200 (Cérebro)') {
+            steps {
+                echo "📏 [SEQUÊNCIA DE MONTAGEM] Validando a Geometria de Ricci..."
                 sh 'chmod +x infra/envoy/audit_zeta.sh'
                 sh './infra/envoy/audit_zeta.sh'
             }
         }
 
-        stage('💎 Certificação de Soberania') {
+        stage('💎 4. Certificação de Soberania (Lei)') {
             steps {
                 script {
-                    echo "🔓 [SOBERANIA] 1.2 Confirmado. Carimbando Versão Gold no GitHub."
+                    echo "🔓 [SOBERANIA] 1.2 Confirmado. Carimbando Versão Gold."
                     
                     sh "git tag -d v1.2-soberano || true"
                     sh "git tag -a v1.2-soberano -m '💎 Veredito: 1+1=0 Confirmado via Geometria de Ricci'"
                     
                     withCredentials([usernamePassword(credentialsId: "${GIT_CRED_ID}", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        // Push seguro via HTTPS usando o Token
+                        // URL Corrigida para o Push soberano
                         sh "git push https://${GIT_PASSWORD}@://github.com --tags --force"
                     }
                 }
@@ -60,11 +59,9 @@ pipeline {
 
     post {
         always {
-            // Coloca o reator em repouso, mas mantém o Jenkins em guarda (UP)
+            echo "🏁 [REPOUSO] Retornando o Manifold ao estado adiabático."
             sh 'docker-compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
-            echo "🏁 Auditoria Finalizada. Reator desligado, Auditor Supremo online."
         }
     }
 }
-
 
