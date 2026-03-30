@@ -1,104 +1,76 @@
-
 pipeline {
     agent any
+
     environment {
-        GIT_CRED_ID = 'github-token-zeta'
-        REPO_URL = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
+        // Coordenadas Físicas do seu WSL
+        CAMINHO_HOST_RUBY = "/home/devildev/ESTRUTURA_RESSONANCIA/Manifold"
+        RAIZ_PROJETO      = "/workspace"
+        REDE_REAL         = "workspace_ressonancia_net"
+        
+        // Variáveis de Soberania (Injetadas separadamente)
+        DB_HOST     = "db_vector"
+        DB_USER     = "postgres"
+        DB_PASSWORD = "password"
+        DB_NAME     = "manifold_development"
+        REDIS_URL   = "redis://redis:6379/1"
+        RAILS_ENV   = "production"
+        
+        // A CHAVE DE OURO: Necessária para o Rails 8.1 em Production
+        SECRET_KEY_BASE = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
     }
 
     stages {
-        stage('🧬 Preparação') {
+        stage('1. Sincronização da Malha Oficial') {
             steps {
+                dir("${RAIZ_PROJETO}") {
+                    echo "--- Garantindo que a Engine e os Bancos estão UP ---"
+                    sh 'docker-compose --profile pipeline up -d'
+                }
+            }
+        }
+
+        stage('2. Acoplamento e Injeção de Segurança') {
+            steps {
+                dir("${RAIZ_PROJETO}/Manifold") {
+                    echo "--- Reconstruindo a Peça Ruby (Manifold) ---"
+                    sh 'docker build -t manifold_underground .'
+                }
                 script {
-                    echo "🧹 Limpando containers antigos..."
-                    sh 'docker rm -f engine_python transport_go envoy redis db_vector rabbitmq || true'
+                    echo "--- Resetando e Alinhando Container em /rails ---"
+                    sh 'docker rm -f manifold_app || true'
                     
-                    checkout scm
-
+                    // Injeção de Variáveis Individuais incluindo a SECRET_KEY_BASE
                     sh """
-                    [ -d "infra/envoy/envoy.yaml" ] && sudo rm -rf infra/envoy/envoy.yaml || true
-                    [ -d "infra/envoy/governo.lua" ] && sudo rm -rf infra/envoy/governo.lua || true
+                        docker run -d --name manifold_app \
+                        --network ${REDE_REAL} \
+                        -v ${CAMINHO_HOST_RUBY}:/rails \
+                        -w /rails \
+                        -e DB_HOST=${DB_HOST} \
+                        -e DB_USER=${DB_USER} \
+                        -e DB_PASSWORD=${DB_PASSWORD} \
+                        -e DB_NAME=${DB_NAME} \
+                        -e REDIS_URL=${REDIS_URL} \
+                        -e RAILS_ENV=${RAILS_ENV} \
+                        -e SECRET_KEY_BASE=${SECRET_KEY_BASE} \
+                        --entrypoint /bin/bash \
+                        manifold_underground -c "tail -f /dev/null"
                     """
-
-                    sh 'chmod +x infra/envoy/audit_zeta.sh'
-                    sh 'chmod 644 infra/envoy/governo.lua'
+                    
+                    echo "--- Destravando bin/rails ---"
+                    sh 'docker exec -u root manifold_app chmod +x bin/rails'
                 }
             }
         }
 
-        stage('🔥 Subir Banco Vetorial') {
+        stage('3. Prontidão para o Console Zeta') {
             steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d db_vector'
-                }
+                echo "--- ENGRENAGEM ALINHADA E BLINDADA ---"
+                echo "A barreira da Secret Key Base foi superada."
+                echo "DIGITE AGORA NO SEU TERMINAL:"
+                echo "docker exec -it manifold_app bin/rails c"
             }
-        }
-
-        stage('🔥 Subir Redis') {
-            steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d redis'
-                }
-            }
-        }
-
-        stage('🔥 Subir RabbitMQ') {
-            steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d rabbitmq'
-                }
-            }
-        }
-
-        stage('🔥 Subir Engine Python') {
-            steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d engine_python'
-                }
-            }
-        }
-
-        stage('🔥 Subir Transport Go') {
-            steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d transport_go'
-                }
-            }
-        }
-
-        stage('🔥 Subir Envoy') {
-            steps {
-                script {
-                    sh 'cd /workspace && docker compose --profile pipeline up -d envoy'
-                }
-            }
-        }
-
-        stage('⚖️ Veredito via Governo Lua') {
-            steps {
-                script {
-                    def gradiente = sh(
-                        script: "docker exec engine_python python3 -c 'from utils.meta_expert import MetaExpert; print(MetaExpert.calcular_funcao_limite())'",
-                        returnStdout: true
-                    ).trim()
-
-                    echo "🧠 Consultando governo.lua sobre o Gradiente: ${gradiente}"
-                    def luaExitCode = sh(script: "lua infra/envoy/governo.lua ${gradiente}", returnStatus: true)
-
-                    if (luaExitCode == 0) {
-                        echo "✅ Governo Lua autorizou a Certificação."
-                    } else {
-                        error "❌ Ruptura detectada. Build Abortado."
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            sh 'cd /workspace && docker compose stop engine_python transport_go envoy redis db_vector rabbitmq || true'
         }
     }
 }
+
 
