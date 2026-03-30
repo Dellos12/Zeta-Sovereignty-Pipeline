@@ -78,14 +78,15 @@ services:
     image: envoyproxy/envoy:v1.28-latest
     container_name: envoy
     volumes:
-      - ./infra/envoy/envoy.yaml:/etc/envoy/envoy.yaml
+      - /workspace/infra/envoy:/etc/envoy/config
+    command: -c /etc/envoy/config/envoy.yaml 
     ports:
       - "10000:10000"
     networks:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 7. Jenkins com Lua
+  # 7. Jenkins (Limpando o Lua e Ajustando Execução)
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -94,10 +95,7 @@ services:
     ports:
       - "8081:8080" 
       - "50000:50000"
-    command: >
-      sh -c "apt-get update && apt-get install -y lua5.3 && 
-             ln -sf /usr/bin/lua5.3 /usr/bin/lua && 
-             /usr/bin/tini -- /usr/local/bin/jenkins.sh"
+    # Removido o apt-get install lua e simplificado para o padrão do Jenkins
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
