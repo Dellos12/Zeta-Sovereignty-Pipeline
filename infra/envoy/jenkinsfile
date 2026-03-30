@@ -2,11 +2,16 @@ pipeline {
     agent any
 
     environment {
+        // Credenciais e Repositório
+        GIT_CRED_ID = 'github-token-zeta'
+        REPO_URL    = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
+
         // Coordenadas Físicas do seu WSL
         CAMINHO_HOST_RUBY = "/home/devildev/ESTRUTURA_RESSONANCIA/Manifold"
         RAIZ_PROJETO      = "/workspace"
+        PASTA_RUBY        = "/workspace/Manifold"
         REDE_REAL         = "workspace_ressonancia_net"
-        
+
         // Variáveis de Soberania (Injetadas separadamente)
         DB_HOST     = "db_vector"
         DB_USER     = "postgres"
@@ -14,7 +19,7 @@ pipeline {
         DB_NAME     = "manifold_development"
         REDIS_URL   = "redis://redis:6379/1"
         RAILS_ENV   = "production"
-        
+
         // A CHAVE DE OURO: Necessária para o Rails 8.1 em Production
         SECRET_KEY_BASE = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
     }
@@ -31,7 +36,7 @@ pipeline {
 
         stage('2. Acoplamento e Injeção de Segurança') {
             steps {
-                dir("${RAIZ_PROJETO}/Manifold") {
+                dir("${PASTA_RUBY}") {
                     echo "--- Reconstruindo a Peça Ruby (Manifold) ---"
                     sh 'docker build -t manifold_underground .'
                 }
@@ -72,5 +77,4 @@ pipeline {
         }
     }
 }
-
 
