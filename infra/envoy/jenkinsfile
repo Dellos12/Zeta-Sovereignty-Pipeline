@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -6,13 +7,11 @@ pipeline {
         GIT_CRED_ID = 'github-token-zeta'
         REPO_URL    = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
 
-        // Coordenadas Físicas do seu WSL
-        CAMINHO_HOST_RUBY = "/home/devildev/ESTRUTURA_RESSONANCIA/Manifold"
-        RAIZ_PROJETO      = "/workspace"
-        PASTA_RUBY        = "/workspace/Manifold"
+        // Ajustado: Pasta relativa dentro do repositório Git
+        PASTA_RUBY        = "Manifold" 
         REDE_REAL         = "workspace_ressonancia_net"
 
-        // Variáveis de Soberania (Injetadas separadamente)
+        // Variáveis de Soberania
         DB_HOST     = "db_vector"
         DB_USER     = "postgres"
         DB_PASSWORD = "password"
@@ -20,35 +19,35 @@ pipeline {
         REDIS_URL   = "redis://redis:6379/1"
         RAILS_ENV   = "production"
 
-        // A CHAVE DE OURO: Necessária para o Rails 8.1 em Production
+        // Necessária para o Rails 8.1+ em Production
         SECRET_KEY_BASE = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
     }
 
     stages {
         stage('1. Sincronização da Malha Oficial') {
             steps {
-                dir("${RAIZ_PROJETO}") {
-                    echo "--- Garantindo que a Engine e os Bancos estão UP ---"
-                    sh 'docker-compose --profile pipeline up -d'
-                }
+                echo "--- Garantindo que a Engine e os Bancos estão UP ---"
+                // Removido dir() absoluto: usa a raiz do checkout por padrão
+                sh 'docker-compose --profile pipeline up -d'
             }
         }
 
         stage('2. Acoplamento e Injeção de Segurança') {
             steps {
+                // Entra na pasta do app para o build
                 dir("${PASTA_RUBY}") {
                     echo "--- Reconstruindo a Peça Ruby (Manifold) ---"
                     sh 'docker build -t manifold_underground .'
                 }
+                
                 script {
                     echo "--- Resetando e Alinhando Container em /rails ---"
                     sh 'docker rm -f manifold_app || true'
                     
-                    // Injeção de Variáveis Individuais incluindo a SECRET_KEY_BASE
+                    // CORREÇÃO FINAL: Removido o volume (-v) para evitar erro 'bin/rails not found'
                     sh """
                         docker run -d --name manifold_app \
                         --network ${REDE_REAL} \
-                        -v ${CAMINHO_HOST_RUBY}:/rails \
                         -w /rails \
                         -e DB_HOST=${DB_HOST} \
                         -e DB_USER=${DB_USER} \
@@ -70,7 +69,7 @@ pipeline {
         stage('3. Prontidão para o Console Zeta') {
             steps {
                 echo "--- ENGRENAGEM ALINHADA E BLINDADA ---"
-                echo "A barreira da Secret Key Base foi superada."
+                echo "Container rodando de forma isolada e segura."
                 echo "DIGITE AGORA NO SEU TERMINAL:"
                 echo "docker exec -it manifold_app bin/rails c"
             }
