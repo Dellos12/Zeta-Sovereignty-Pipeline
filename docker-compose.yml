@@ -1,4 +1,3 @@
-
 services:
   # 1. Banco Vetorial (pgvector)
   db_vector:
@@ -106,9 +105,11 @@ services:
       - ressonancia_net
     profiles: ["jenkins"]
 
-  # 8. Aplicação Rails
+  # 8. Aplicação Rails (Manifold)
   manifold_app:
-    build: .
+    build:
+      context: ./Manifold
+      dockerfile: Dockerfile
     container_name: manifold_app
     environment:
       DB_HOST: db_vector
@@ -129,3 +130,4 @@ services:
 networks:
   ressonancia_net:
     driver: bridge
+
