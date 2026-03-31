@@ -110,7 +110,6 @@ services:
     build:
       context: ./Manifold
       dockerfile: Dockerfile
-    container_name: manifold_app
     environment:
       DB_HOST: db_vector
       DB_USER: postgres
