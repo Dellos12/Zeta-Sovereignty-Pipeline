@@ -86,7 +86,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 7. Jenkins (Limpando o Lua e Ajustando Execução)
+  # 7. Jenkins
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -95,7 +95,6 @@ services:
     ports:
       - "8081:8080" 
       - "50000:50000"
-    # Removido o apt-get install lua e simplificado para o padrão do Jenkins
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
@@ -106,6 +105,26 @@ services:
     networks:
       - ressonancia_net
     profiles: ["jenkins"]
+
+  # 8. Aplicação Rails
+  manifold_app:
+    build: .
+    container_name: manifold_app
+    environment:
+      DB_HOST: db_vector
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: manifold_development
+      REDIS_URL: redis://redis:6379/1
+      RAILS_ENV: production
+    depends_on:
+      - db_vector
+      - redis
+    networks:
+      - ressonancia_net
+    ports:
+      - "3000:3000"
+    profiles: ["pipeline"]
 
 networks:
   ressonancia_net:
