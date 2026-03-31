@@ -1,13 +1,21 @@
 require 'redis'
 
-# O cifrão ($) torna a variável global para todo o Rails
-$redis = Redis.new(host: ENV.fetch('REDIS_HOST', 'localhost'), port: 6379, db: 0)
+# Usamos a REDIS_URL que o Jenkins injetou (redis://redis:6379/1)
+# Se não existir, ele tenta o localhost como fallback
+redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
 
-# Teste de Conexão no Boot
+$redis = Redis.new(url: redis_url)
+
+# Teste de Conexão no Boot com Retry (Garante que a rede Docker estabilize)
 begin
+  retries ||= 0
   $redis.ping
-  puts "📡 [REDIS] Conexão Estabelecida: Hiperplano Ativo."
+  puts "📡 [REDIS] Conexão Estabelecida: Hiperplano Ativo em #{redis_url}"
 rescue StandardError => e
-  puts "⚠️ [REDIS] Offline: Verifique se o container 'redis' está UP."
+  if (retries += 1) < 3
+    sleep 1
+    retry
+  end
+  puts "⚠️ [REDIS] Offline: Falha ao conectar em #{redis_url}. Erro: #{e.message}"
 end
 
