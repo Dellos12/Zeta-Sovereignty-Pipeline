@@ -33,7 +33,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 4. Engine Python
+  # 4. Engine Python - Ajustado para Receber o Sensor em 2026
   engine_python:
     build: 
       context: ./engine_python
@@ -46,6 +46,8 @@ services:
     volumes:
       - ./engine_python:/app
       - ./shared_data:/app/shared_data
+      # --- AMARRA TÉCNICA: O sensor externo injeta a onda aqui ---
+      - ../projeto_ricci_vision/output:/app/shared_data/sensor_input
     stdin_open: true
     tty: true
     depends_on:
@@ -110,13 +112,19 @@ services:
     build:
       context: ./Manifold
       dockerfile: Dockerfile
+    container_name: estrutura_ressonancia-manifold_app-1
     environment:
-      DB_HOST: db_vector
-      DB_USER: postgres
-      DB_PASSWORD: password
-      DB_NAME: manifold_development
-      REDIS_URL: redis://redis:6379/1
-      RAILS_ENV: production
+      # --- INJETE A CHAVE AQUI ---
+      - SECRET_KEY_BASE=985a78449a9aae6915132f82beb29355399444bb33925abf80679a72c572d99673a8a390ebca8d48a6a78d531b5264cb5e48b6f2e1cf5996b8140d0505450efb
+      - RAILS_ENV=production
+      - DB_HOST=db_vector
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=manifold_development
+      - REDIS_URL=redis://redis:6379/1
+    volumes:
+      - ./Manifold:/rails
+      - ./shared_data:/app/shared_data
     depends_on:
       - db_vector
       - redis

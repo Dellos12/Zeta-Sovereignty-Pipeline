@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Dependências de sistema
+# Dependências de sistema (Adicionado: libgl1, libglib2.0-0 para OpenCV)
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     gcc \
     git \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Variáveis de ambiente
@@ -20,10 +22,11 @@ ENV POLARS_SKIP_CPU_CHECK=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-# Camada 1: Manipulação de Dados
+# Camada 1: Manipulação de Dados (Adicionado: opencv-python)
 RUN pip install --no-cache-dir \
     pandas \
     "numpy==1.26.4" \
+    opencv-python \
     polars[rtcompat] \
     pyarrow \
     fastparquet \
@@ -32,11 +35,9 @@ RUN pip install --no-cache-dir \
 
 # Camada 2: Inteligência, Geometria e Linguística
 RUN pip install --no-cache-dir \
-    # HTTP/2 e transporte
     h11 \
     httpcore \
     httpx \
-    # HuggingFace e NLP
     "huggingface-hub[cli]" \
     tokenizers \
     sentencepiece \
@@ -46,13 +47,11 @@ RUN pip install --no-cache-dir \
     accelerate \
     transformers \
     sentence-transformers \
-    # Matemática e ML
     scikit-learn \
     joblib \
     threadpoolctl \
     PyYAML \
     regex \
-    # Grafos e Geometria
     python-louvain \
     networkit \
     networkx \
@@ -60,16 +59,14 @@ RUN pip install --no-cache-dir \
     GraphRicciCurvature \
     POT \
     geomstats \
-    # Inferência
     onnx \
     onnxruntime \
     "mxnet>=1.9.1" --no-deps \
-    # Dependências transitivas críticas
     multiprocess \
     dill \
     xxhash
 
-# Patch MXNet + NumPy
+# Patch MXNet + NumPy (Caminho corrigido para o ambiente do Docker)
 RUN sed -i 's/bool = onp.bool/bool = bool/g' /usr/local/lib/python3.10/site-packages/mxnet/numpy/utils.py || true
 
 # Camada 3: Persistência e gRPC

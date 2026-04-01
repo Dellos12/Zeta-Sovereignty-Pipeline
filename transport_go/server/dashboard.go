@@ -1,39 +1,50 @@
 package server
 
 import (
-    "context"
-    "fmt"
-    "net/http"
-
-    "github.com/redis/go-redis/v9"
+	"context"
+	"fmt"
+	"net/http"
+	"github.com/redis/go-redis/v9"
 )
 
 var ctx = context.Background()
 
 func StartDashboard(rdb *redis.Client) {
-    // Rota principal: http://localhost:8080
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        // O Go busca na memória o que o Python e o Ruby decidiram
-        zeta, _ := rdb.Get(ctx, "manifold:target_zeta").Result()
-        sig, _ := rdb.Get(ctx, "manifold:current_signature").Result()
-        
-        // Resposta visual em HTML (Estilo Matrix/Terminal)
-        w.Header().Set("Content-Type", "text/html")
-        fmt.Fprintf(w, `
-            <div style="background:#000; color:#00ff41; font-family:monospace; padding:40px; height:100vh;">
-                <h1>🧪 TELEMETRIA DE ISÓTOPOS: INTERFACE REAL</h1>
-                <hr style="border:1px solid #00ff41;">
-                <h2>[ESTADO ATUAL DO MANIFOLD]</h2>
-                <p><b>ISÓTOPO INJETADO:</b> %s</p>
-                <p><b>GRADIENTE RICCI (1.2/1.8):</b> %s</p>
-                <hr style="border:1px solid #00ff41;">
-                <p><i>Aguardando Resonância ABNT-ZETA-1200...</i></p>
-                <script>setTimeout(function(){ location.reload(); }, 2000);</script>
-            </div>
-        `, sig, zeta)
-    })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Lógica de Busca (Input do Usuário)
+		if r.Method == http.MethodPost {
+			query := r.FormValue("busca_isótopo")
+			// Injetamos a intenção de busca no Hiperplano
+			rdb.Set(ctx, "manifold:user_query", query, 0)
+			rdb.Publish(ctx, "zeta:user:command", query) // Disparo de comando
+		}
 
-    fmt.Println("🌐 [GO SERVER] Dashboard Visual ativo na porta 8080")
-    http.ListenAndServe(":8080", nil)
+		zeta, _ := rdb.Get(ctx, "manifold:target_zeta").Result()
+		sig, _ := rdb.Get(ctx, "manifold:current_signature").Result()
+		status, _ := rdb.Get(ctx, "zeta:soberania:status").Result()
+
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, `
+			<body style="background:#000; color:#00ff41; font-family:monospace; padding:40px;">
+				<h1>🧪 CONSOLE DE BUSCA ZETA: %s</h1>
+				<form method="POST" style="margin-bottom:20px;">
+					<input type="text" name="busca_isótopo" placeholder="Digite o Alvo (ex: BENZENO)" 
+					       style="background:#000; color:#00ff41; border:1px solid #00ff41; padding:10px; width:300px;">
+					<button type="submit" style="background:#00ff41; color:#000; padding:10px; cursor:pointer;">DISPARAR SALTO</button>
+				</form>
+				<hr style="border:1px solid #00ff41;">
+				<div style="border:2px solid #00ff41; padding:20px;">
+					<h2>[TELEMETRIA EM TEMPO REAL]</h2>
+					<p><b>IDENTIDADE ATUAL:</b> %s</p>
+					<p><b>ALVO ZETA:</b> %s</p>
+					<p><b>STATUS DE SOBERANIA:</b> <span style="color:#fff; background:red;"> %s </span></p>
+				</div>
+				<script>setTimeout(function(){ location.reload(); }, 3000);</script>
+			</body>
+		`, sig, sig, zeta, status)
+	})
+
+	fmt.Println("🌐 [GO SERVER] Interface de Busca ativa na porta 8080")
+	http.ListenAndServe(":8080", nil)
 }
 
