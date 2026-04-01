@@ -28,7 +28,7 @@ pipeline {
             steps {
                 echo "--- Garantindo que a Engine e os Bancos estão UP ---"
                 // Removido dir() absoluto: usa a raiz do checkout por padrão
-                sh 'docker-compose --profile pipeline up -d'
+                sh 'docker compose --profile pipeline up -d'
             }
         }
 
