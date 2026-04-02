@@ -30,7 +30,8 @@ pipeline {
                 echo "--- Limpando Conflitos e Subindo Infra (DB, Redis, Engine) ---"
                 // --force-recreate mata containers "pendurados"
                 // --remove-orphans limpa o manifold_app caso ele tenha ficado no perfil antigo
-                sh 'docker compose --profile pipeline up -d --force-recreate --remove-orphans'
+                sh 'docker compose up -d --force-recreate --remove-orphans db_vector rabbitmq redis engine_python transport_go envoy'
+
             }
         }
 
