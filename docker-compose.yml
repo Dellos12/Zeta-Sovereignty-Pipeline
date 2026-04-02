@@ -80,7 +80,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 7. Jenkins (Mantemos o nome fixo aqui para facilitar seu acesso)
+  # 7. Jenkins
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -95,13 +95,13 @@ services:
       - ./jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
-      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins
+      - /usr/libexec/docker/cli-plugins:/usr/lib/docker/cli-plugins
       - /home/devildev/ESTRUTURA_RESSONANCIA:/workspace
     networks:
       - ressonancia_net
     profiles: ["jenkins"]
 
-  # 8. Aplicação Rails (Manifold) - SEM PROFILE para o Jenkins gerenciar
+  # 8. Aplicação Rails (Manifold) - Gerenciada via Jenkinsfile Stage 2
   manifold_app:
     build:
       context: ./Manifold
@@ -117,15 +117,13 @@ services:
     volumes:
       - ./Manifold:/rails
       - ./shared_data:/app/shared_data
-    depends_on:
-      - db_vector
-      - redis
+    # NOTA: depends_on removido aqui para evitar erro de "undefined service" 
+    # quando o Manifold não está no perfil "pipeline".
     networks:
       - ressonancia_net
     ports:
       - "3000:3000"
 
-# --- BLOCO OBRIGATÓRIO PARA RESOLVER O ERRO DE UNDEFINED NETWORK ---
 networks:
   ressonancia_net:
     name: ressonancia_net
