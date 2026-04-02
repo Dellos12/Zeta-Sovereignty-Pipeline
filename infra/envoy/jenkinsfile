@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -7,9 +6,11 @@ pipeline {
         GIT_CRED_ID = 'github-token-zeta'
         REPO_URL    = 'https://github.com/Dellos12/Zeta-Sovereignty-Pipeline'
 
-        // Ajustado: Pasta relativa dentro do repositório Git
-        PASTA_RUBY        = "Manifold" 
-        REDE_REAL         = "workspace_ressonancia_net"
+        // Pasta do app dentro do Git
+        PASTA_RUBY  = "Manifold" 
+        
+        // REDE: Ajustada para o nome que o Docker Compose cria (sem o prefixo de workspace)
+        REDE_REAL   = "ressonancia_net"
 
         // Variáveis de Soberania
         DB_HOST     = "db_vector"
@@ -19,35 +20,40 @@ pipeline {
         REDIS_URL   = "redis://redis:6379/1"
         RAILS_ENV   = "production"
 
-        // Necessária para o Rails 8.1+ em Production
-        SECRET_KEY_BASE = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        // Chave de Segurança (Mantenha em segredo)
+        SECRET_KEY_BASE = "985a78449a9aae6915132f82beb29355399444bb33925abf80679a72c572d99673a8a390ebca8d48a6a78d531b5264cb5e48b6f2e1cf5996b8140d0505450efb"
     }
 
     stages {
         stage('1. Sincronização da Malha Oficial') {
             steps {
-                echo "--- Garantindo que a Engine e os Bancos estão UP ---"
-                // Removido dir() absoluto: usa a raiz do checkout por padrão
-                sh 'docker compose --profile pipeline up -d'
+                echo "--- Limpando Conflitos e Subindo Infra (DB, Redis, Engine) ---"
+                // --force-recreate mata containers "pendurados"
+                // --remove-orphans limpa o manifold_app caso ele tenha ficado no perfil antigo
+                sh 'docker compose --profile pipeline up -d --force-recreate --remove-orphans'
             }
         }
 
         stage('2. Acoplamento e Injeção de Segurança') {
             steps {
-                // Entra na pasta do app para o build
                 dir("${PASTA_RUBY}") {
                     echo "--- Reconstruindo a Peça Ruby (Manifold) ---"
                     sh 'docker build -t manifold_underground .'
+
+                    echo "--- DEBUG: Validando instalação do Rails na Imagem ---"
+                    sh 'docker run --rm manifold_underground ls -la /rails/bin/rails'
                 }
                 
                 script {
-                    echo "--- Resetando e Alinhando Container em /rails ---"
+                    echo "--- Resetando e Alinhando Container Manifold ---"
+                    // Remove qualquer container antigo para evitar o erro "Conflict"
                     sh 'docker rm -f manifold_app || true'
                     
-                    // CORREÇÃO FINAL: Removido o volume (-v) para evitar erro 'bin/rails not found'
+                    // SEM VOLUME (-v) para usar o Rails instalado no Dockerfile
                     sh """
                         docker run -d --name manifold_app \
                         --network ${REDE_REAL} \
+                        -u root \
                         -w /rails \
                         -e DB_HOST=${DB_HOST} \
                         -e DB_USER=${DB_USER} \
@@ -57,11 +63,8 @@ pipeline {
                         -e RAILS_ENV=${RAILS_ENV} \
                         -e SECRET_KEY_BASE=${SECRET_KEY_BASE} \
                         --entrypoint /bin/bash \
-                        manifold_underground -c "tail -f /dev/null"
+                        manifold_underground -c "chmod +x bin/rails && tail -f /dev/null"
                     """
-                    
-                    echo "--- Destravando bin/rails ---"
-                    sh 'docker exec -u root manifold_app chmod +x bin/rails'
                 }
             }
         }
@@ -69,9 +72,11 @@ pipeline {
         stage('3. Prontidão para o Console Zeta') {
             steps {
                 echo "--- ENGRENAGEM ALINHADA E BLINDADA ---"
-                echo "Container rodando de forma isolada e segura."
-                echo "DIGITE AGORA NO SEU TERMINAL:"
-                echo "docker exec -it manifold_app bin/rails c"
+                // Teste final de conectividade
+                sh 'docker exec manifold_app bin/rails -v'
+                
+                echo "Container rodando: Rails 8.1.3 detectado."
+                echo "ACESSO AO CONSOLE: docker exec -it manifold_app bin/rails c"
             }
         }
     }

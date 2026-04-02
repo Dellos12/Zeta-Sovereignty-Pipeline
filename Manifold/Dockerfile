@@ -25,10 +25,18 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 COPY Gemfile Gemfile.lock ./
+# Garante que o bundle instale tudo no caminho correto
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
 
 COPY . .
+
+# --- AJUSTE DE SOBERANIA: Garante que os executáveis do Rails existam e funcionem ---
+RUN bundle binstubs --all && \
+    chmod +x bin/* && \
+    sed -i 's/\r$//' bin/* && \
+    sed -i 's/\r$//' config/environments/*.rb
+
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
@@ -36,6 +44,10 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 FROM base
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+
+# Criar a pasta de logs e pids para evitar erros de permissão do usuário rails
+RUN mkdir -p log tmp/pids && chown -R rails:rails log tmp
+
 USER 1000:1000
 
 COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
@@ -44,6 +56,5 @@ COPY --chown=rails:rails --from=build /rails /rails
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 EXPOSE 80
-# Comando ajustado para aceitar tráfego da rede 'ressonancia_net'
 CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "80"]
 

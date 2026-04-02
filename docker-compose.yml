@@ -2,7 +2,6 @@ services:
   # 1. Banco Vetorial (pgvector)
   db_vector:
     image: ankane/pgvector
-    container_name: db_vector
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: manifold_development
@@ -15,7 +14,6 @@ services:
   # 2. RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -26,19 +24,17 @@ services:
   # 3. Redis
   redis:
     image: redis:alpine
-    container_name: redis
     ports:
       - "6379:6379"
     networks:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 4. Engine Python - Ajustado para Receber o Sensor em 2026
+  # 4. Engine Python
   engine_python:
     build: 
       context: ./engine_python
       dockerfile: Dockerfile
-    container_name: engine_python
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
@@ -46,7 +42,6 @@ services:
     volumes:
       - ./engine_python:/app
       - ./shared_data:/app/shared_data
-      # --- AMARRA TÉCNICA: O sensor externo injeta a onda aqui ---
       - ../projeto_ricci_vision/output:/app/shared_data/sensor_input
     stdin_open: true
     tty: true
@@ -62,7 +57,6 @@ services:
     build: 
       context: ./transport_go
       dockerfile: Dockerfile
-    container_name: transport_go
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -77,7 +71,6 @@ services:
   # 6. Envoy Proxy
   envoy:
     image: envoyproxy/envoy:v1.28-latest
-    container_name: envoy
     volumes:
       - /workspace/infra/envoy:/etc/envoy/config
     command: -c /etc/envoy/config/envoy.yaml 
@@ -87,7 +80,7 @@ services:
       - ressonancia_net
     profiles: ["pipeline"]
 
-  # 7. Jenkins
+  # 7. Jenkins (Mantemos o nome fixo aqui para facilitar seu acesso)
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -102,19 +95,18 @@ services:
       - ./jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins
       - /home/devildev/ESTRUTURA_RESSONANCIA:/workspace
     networks:
       - ressonancia_net
     profiles: ["jenkins"]
 
-  # 8. Aplicação Rails (Manifold)
+  # 8. Aplicação Rails (Manifold) - SEM PROFILE para o Jenkins gerenciar
   manifold_app:
     build:
       context: ./Manifold
       dockerfile: Dockerfile
-    container_name: estrutura_ressonancia-manifold_app-1
     environment:
-      # --- INJETE A CHAVE AQUI ---
       - SECRET_KEY_BASE=985a78449a9aae6915132f82beb29355399444bb33925abf80679a72c572d99673a8a390ebca8d48a6a78d531b5264cb5e48b6f2e1cf5996b8140d0505450efb
       - RAILS_ENV=production
       - DB_HOST=db_vector
@@ -132,9 +124,10 @@ services:
       - ressonancia_net
     ports:
       - "3000:3000"
-    profiles: ["pipeline"]
 
+# --- BLOCO OBRIGATÓRIO PARA RESOLVER O ERRO DE UNDEFINED NETWORK ---
 networks:
   ressonancia_net:
+    name: ressonancia_net
     driver: bridge
 
